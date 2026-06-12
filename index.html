@@ -557,81 +557,72 @@ function setTab(tab) {
 }
 
 // ─── LIVE SYNC VIA CLAUDE AI ─────────────────────────────────────────────────
+async function callSync(teams) {
+  const today = new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+  const prompt = `World Cup 2026 data assistant. Today: ${today}.
+Search for current 2026 FIFA World Cup results and return data for these teams: ${teams.join(", ")}
+
+For each team return:
+1. Furthest stage reached (use EXACTLY one of: "Group stage", "Round of 32", "Round of 16", "Quarterfinals", "Semifinals", "Final", "Champion")
+2. Total goals scored across all their matches so far
+
+Respond ONLY with a JSON object, no markdown:
+{"TeamName":{"stage":"Group stage","goals":0},...}`;
+
+  const res = await fetch("/.netlify/functions/sync", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 800,
+      tools: [{ type: "web_search_20250305", name: "web_search" }],
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+
+  const rawText = await res.text();
+  if (!res.ok) throw new Error("HTTP " + res.status + ": " + rawText.substring(0, 200));
+
+  let data;
+  try { data = JSON.parse(rawText); }
+  catch(e) { throw new Error("Bad response: " + rawText.substring(0, 200)); }
+
+  if (data.error) throw new Error(data.details ? JSON.stringify(data.details) : data.error);
+  if (!data.content) throw new Error("No content in response: " + JSON.stringify(data));
+
+  const text = data.content.map(b => b.type === "text" ? b.text : "").join("").trim();
+  const jsonStr = text.replace(/```json|```/g, "").trim();
+  return JSON.parse(jsonStr);
+}
+
 async function syncData() {
   const btn = document.getElementById("sync-btn");
   btn.disabled = true;
   btn.textContent = "⟳ Syncing…";
   statusType = "loading";
-  statusMsg = "Fetching live World Cup data…";
+  statusMsg = "Fetching live World Cup data… (this takes ~20 seconds)";
   renderStandings();
 
   const allTeams = PARTICIPANTS.flatMap(p => p.teams);
-
-  const prompt = `You are a World Cup 2026 data assistant. Today is ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}.
-
-Using your knowledge of the 2026 FIFA World Cup results so far, use web search to get the most current data, then return for each team:
-1. The furthest stage reached
-2. Total goals scored across ALL matches played so far (including group stage + knockout rounds)
-
-Teams to check: ${allTeams.join(", ")}
-
-Stage labels (use exactly):
-- "Group stage" = eliminated in group stage or not yet reached knockout round
-- "Round of 32" = advanced to/through Round of 32
-- "Round of 16" = advanced to/through Round of 16
-- "Quarterfinals" = advanced to/through Quarterfinals
-- "Semifinals" = advanced to/through Semifinals
-- "Final" = reached the Final
-- "Champion" = won the tournament
-
-Respond ONLY with a JSON object. No markdown, no explanation. Format:
-{"Brazil":{"stage":"Round of 32","goals":7},"France":{"stage":"Group stage","goals":3},...}
-
-Goals = total goals scored by that national team in all their World Cup 2026 matches so far. Use 0 if no matches played yet.`;
+  const half = Math.ceil(allTeams.length / 2);
+  const batch1 = allTeams.slice(0, half);
+  const batch2 = allTeams.slice(half);
 
   try {
-    const res = await fetch("/.netlify/functions/sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        tools: [{ type: "web_search_20250305", name: "web_search" }],
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
+    statusMsg = "Syncing batch 1 of 2…";
+    renderStandings();
+    const result1 = await callSync(batch1);
 
-    const rawText = await res.text();
+    statusMsg = "Syncing batch 2 of 2…";
+    renderStandings();
+    const result2 = await callSync(batch2);
 
-    if (!res.ok) {
-      throw new Error("HTTP " + res.status + ": " + rawText.substring(0, 200));
-    }
-
-    let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch(e) {
-      throw new Error("Bad response from function: " + rawText.substring(0, 200));
-    }
-
-    if (data.error) {
-      const detail = data.details ? JSON.stringify(data.details) : data.error;
-      throw new Error(detail);
-    }
-
-    if (!data.content) {
-      throw new Error("Unexpected response format: " + JSON.stringify(data));
-    }
-
-    const text = data.content.map(b => b.type === "text" ? b.text : "").join("").trim();
-    const jsonStr = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(jsonStr);
-
+    const parsed = { ...result1, ...result2 };
     let updated = 0;
-    for (const [team, data] of Object.entries(parsed)) {
+    for (const [team, info] of Object.entries(parsed)) {
       if (teamState[team] !== undefined) {
-        const stage = typeof data === "object" ? data.stage : data;
-        const goals = typeof data === "object" ? (data.goals || 0) : 0;
+        const stage = typeof info === "object" ? info.stage : info;
+        const goals = typeof info === "object" ? (info.goals || 0) : 0;
         teamState[team] = { stage, goals, eliminated: stage === "Group stage" };
         updated++;
       }
