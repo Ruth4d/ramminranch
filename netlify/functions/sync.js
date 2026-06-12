@@ -9,17 +9,13 @@ exports.handler = async function(event) {
     return { statusCode: 500, body: JSON.stringify({ error: "API key not configured — env var is empty or missing" }) };
   }
 
-  if (!ANTHROPIC_API_KEY.startsWith("sk-ant-")) {
-    return { statusCode: 500, body: JSON.stringify({ error: "API key format wrong — starts with: " + ANTHROPIC_API_KEY.substring(0, 8) }) };
-  }
-
   try {
     const body = JSON.parse(event.body);
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "anthropic-api-key": ANTHROPIC_API_KEY,
+        "x-api-key": ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01"
       },
       body: JSON.stringify(body)
