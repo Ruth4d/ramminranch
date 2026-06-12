@@ -601,9 +601,20 @@ Goals = total goals scored by that national team in all their World Cup 2026 mat
       })
     });
 
-    const data = await res.json();
+    const rawText = await res.text();
 
-    if (!res.ok || data.error) {
+    if (!res.ok) {
+      throw new Error("HTTP " + res.status + ": " + rawText.substring(0, 200));
+    }
+
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch(e) {
+      throw new Error("Bad response from function: " + rawText.substring(0, 200));
+    }
+
+    if (data.error) {
       const detail = data.details ? JSON.stringify(data.details) : data.error;
       throw new Error(detail);
     }
