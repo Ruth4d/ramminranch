@@ -423,6 +423,9 @@ function totalGoals(participant) {
 }
 
 function activeCount(participant) {
+  const knockedOut = ["Round of 32","Round of 16","Quarterfinals","Semifinals","Final","Champion"];
+  // A team is out only if they reached a knockout stage but didn't win it
+  // For now treat all teams as active unless manually marked eliminated
   return participant.teams.filter(t => !teamState[t]?.eliminated).length;
 }
 
@@ -487,7 +490,7 @@ function renderTeams() {
       const s = teamState[t] || {};
       const tPts = pointsForTeam(t);
       const goals = s.goals || 0;
-      const cls = s.eliminated ? "eliminated" : (s.stage && s.stage !== "Group stage" ? "active" : "");
+      const cls = s.stage && s.stage !== "Group stage" ? "active" : "";
       const ptsLabel = tPts > 0 ? `<span class="chip-pts">${tPts}p${goals > 0 ? ` ⚽${goals}` : ""}</span>` : (goals > 0 ? `<span class="chip-pts">⚽${goals}</span>` : "");
       html += `<span class="team-chip ${cls}">${t}${ptsLabel}</span>`;
     });
@@ -534,7 +537,8 @@ function renderEdit() {
 function updateStage(team, stage) {
   if (!teamState[team]) teamState[team] = { goals: 0 };
   teamState[team].stage = stage;
-  teamState[team].eliminated = (stage === "Group stage");
+  const knockoutStages = ["Round of 32","Round of 16","Quarterfinals","Semifinals","Final","Champion"];
+  teamState[team].eliminated = false; // never auto-eliminate; use chip style only
   save();
   renderAll();
 }
@@ -607,7 +611,7 @@ async function syncData() {
           teamState[team] = {
             stage: info.stage || "Group stage",
             goals: info.goals || 0,
-            eliminated: (info.stage || "Group stage") === "Group stage"
+            eliminated: false
           };
           updated++;
         }
