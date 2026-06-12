@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>World Cup 2026 Pool</title>
+<style>
+  :root {
+    --green: #2d6a4f;
+    --green-light: #d8f3dc;
+    --green-mid: #52b788;
+    --gold: #b7791f;
+    --gold-light: #fef3c7;
+    --silver: #6b7280;
+    --bronze: #92400e;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-400: #9ca3af;
+    --gray-600: #4b5563;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0a1628;
+    color: var(--gray-900);
+    min-height: 100vh;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 50%, #0f2d1a 100%);
+    padding: 2.5rem 1.5rem 3.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '⚽';
+    position: absolute;
+    font-size: 180px;
+    opacity: 0.04;
+    top: -20px;
+    right: -20px;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .hero .sub {
+    color: #7dd3fc;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .hero .last-updated {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .sync-btn {
+    margin-top: 1rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 0.5rem 1.25rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-weight: 500;
+  }
+  .sync-btn:hover { background: rgba(255,255,255,0.18); }
+  .sync-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .main {
+    max-width: 860px;
+    margin: -1.5rem auto 0;
+    padding: 0 1rem 3rem;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 6px;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 0.55rem 0.5rem;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .tab.active {
+    background: var(--green);
+    color: #fff;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  .card-header {
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gray-400);
+  }
+
+  /* Standings */
+  .standing-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto auto;
+    gap: 0;
+    align-items: center;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--gray-100);
+    transition: background 0.1s;
+  }
+  .standing-row:last-child { border-bottom: none; }
+  .standing-row:hover { background: var(--gray-50); }
+
+  .rank-badge {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: var(--gray-100);
+    color: var(--gray-600);
+  }
+  .rank-badge.gold { background: var(--gold-light); color: var(--gold); }
+  .rank-badge.silver { background: #f1f5f9; color: var(--silver); }
+  .rank-badge.bronze { background: #fef3e2; color: var(--bronze); }
+
+  .participant-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0 0.75rem;
+  }
+
+  .teams-remaining {
+    font-size: 0.75rem;
+    color: var(--gray-400);
+    padding-right: 1rem;
+    text-align: right;
+  }
+
+  .points-badge {
+    background: var(--green);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    min-width: 44px;
+    text-align: center;
+  }
+
+  /* Teams view */
+  .participant-block {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .participant-block:last-child { border-bottom: none; }
+
+  .participant-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+  }
+
+  .participant-block-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .teams-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .team-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1.5px solid var(--gray-200);
+    background: var(--gray-50);
+    color: var(--gray-600);
+  }
+  .team-chip.active {
+    border-color: #52b788;
+    background: #d8f3dc;
+    color: #1b4332;
+  }
+  .team-chip.eliminated {
+    text-decoration: line-through;
+    opacity: 0.45;
+  }
+  .team-chip .chip-pts {
+    font-weight: 700;
+    font-size: 0.7rem;
+  }
+
+  /* Edit / points key */
+  .points-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .key-pill {
+    background: var(--green-light);
+    color: var(--green);
+    border-radius: 99px;
+    padding: 3px 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .edit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 1px;
+    background: var(--gray-100);
+  }
+
+  .edit-cell {
+    background: #fff;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .edit-cell-left { flex: 1; min-width: 0; }
+  .edit-team { font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .edit-owner { font-size: 0.7rem; color: var(--gray-400); }
+
+  .stage-select {
+    font-size: 0.72rem;
+    padding: 3px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    color: var(--gray-800);
+    cursor: pointer;
+    max-width: 110px;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.6rem 1.25rem;
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-100);
+    font-size: 0.75rem;
+    color: var(--gray-600);
+  }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green-mid); }
+  .status-dot.loading { background: #f59e0b; animation: pulse 1s infinite; }
+  .status-dot.error { background: var(--red); }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .alert {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.8rem;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+  }
+  .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+  .alert-error { background: var(--red-light); color: #991b1b; border: 1px solid #fca5a5; }
+
+  @media (max-width: 500px) {
+    .standing-row { grid-template-columns: 32px 1fr auto; }
+    .teams-remaining { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="sub">2026 FIFA World Cup</div>
+  <h1>Draft Pool Standings</h1>
+  <p class="last-updated" id="last-updated">Not yet synced</p>
+  <button class="sync-btn" id="sync-btn" onclick="syncData()">⟳ Sync live data</button>
+</div>
+
+<div class="main">
+  <div id="alert-area"></div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('standings')">🏆 Standings</button>
+    <button class="tab" onclick="setTab('teams')">📋 Teams</button>
+    <button class="tab" onclick="setTab('edit')">✏️ Edit stages</button>
+  </div>
+
+  <div id="tab-standings"></div>
+  <div id="tab-teams" style="display:none"></div>
+  <div id="tab-edit" style="display:none"></div>
+</div>
+
+<script>
+// ─── CONFIGURATION — edit these to match your pool ───────────────────────────
+const PARTICIPANTS = [
+  { name: "Julian", teams: ["Spain","Mexico","Uruguay","Algeria","Ghana","Cape Verde"] },
+  { name: "Jacob",  teams: ["France","Croatia","Switzerland","Paraguay","Canada","Qatar"] },
+  { name: "Lopes",  teams: ["Portugal","Japan","Ecuador","Sweden","Iran","Uzbekistan"] },
+  { name: "AJ",     teams: ["Argentina","Belgium","Scotland","Ivory Coast","Austria","South Africa"] },
+  { name: "Juan",   teams: ["Germany","Brazil","Turkiye","Senegal","Bosnia/Herz","Saudi Arabia"] },
+  { name: "Andy",   teams: ["Netherlands","Norway","Colombia","South Korea","Australia","Panama"] },
+  { name: "Dylan",  teams: ["England","Morocco","USA","Egypt","Czechia","Congo"] },
+];
+
+const POINT_SYSTEM = {
+  "Round of 32":     3,
+  "Round of 16":     6,
+  "Quarterfinals":  12,
+  "Semifinals":     20,
+  "Final":          32,
+  "Champion":       50,
+};
+
+const STAGE_ORDER = ["Round of 32","Round of 16","Quarterfinals","Semifinals","Final","Champion"];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+// Loads from localStorage so edits persist across refreshes
+const GOAL_BONUS = 1; // points per goal scored
+
+function defaultTeamState() {
+  const state = {};
+  PARTICIPANTS.forEach(p => {
+    p.teams.forEach(t => { state[t] = { stage: "Group stage", eliminated: false, goals: 0 }; });
+  });
+  return state;
+}
+
+let teamState = JSON.parse(localStorage.getItem("wc2026_pool_v2") || "null") || defaultTeamState();
+
+let statusMsg = "Ready";
+let statusType = "ok";
+
+function save() { localStorage.setItem("wc2026_pool_v2", JSON.stringify(teamState)); }
+
+function stagePointsForTeam(team) {
+  const s = teamState[team];
+  if (!s || s.stage === "Group stage") return 0;
+  let total = 0;
+  for (const stage of STAGE_ORDER) {
+    total += POINT_SYSTEM[stage];
+    if (stage === s.stage) break;
+  }
+  return total;
+}
+
+function goalPointsForTeam(team) {
+  return (teamState[team]?.goals || 0) * GOAL_BONUS;
+}
+
+function pointsForTeam(team) {
+  return stagePointsForTeam(team) + goalPointsForTeam(team);
+}
+
+function totalPts(participant) {
+  return participant.teams.reduce((sum, t) => sum + pointsForTeam(t), 0);
+}
+
+function totalGoals(participant) {
+  return participant.teams.reduce((sum, t) => sum + (teamState[t]?.goals || 0), 0);
+}
+
+function activeCount(participant) {
+  return participant.teams.filter(t => !teamState[t]?.eliminated).length;
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function renderAll() {
+  renderStandings();
+  renderTeams();
+  renderEdit();
+}
+
+function rankClass(i) {
+  return ["gold","silver","bronze"][i] || "";
+}
+
+function renderStandings() {
+  const sorted = [...PARTICIPANTS].sort((a,b) => totalPts(b) - totalPts(a));
+  let html = '<div class="card">';
+  html += '<div class="card-header"><span class="card-title">Overall standings</span></div>';
+  sorted.forEach((p, i) => {
+    const pts = totalPts(p);
+    const stagePts = p.teams.reduce((s,t) => s + stagePointsForTeam(t), 0);
+    const gls = totalGoals(p);
+    const active = activeCount(p);
+    html += `
+      <div class="standing-row">
+        <div class="rank-badge ${rankClass(i)}">${i+1}</div>
+        <div class="participant-name">
+          ${p.name}
+          <div style="font-size:0.7rem;font-weight:400;color:var(--gray-400);margin-top:1px;">${stagePts} stage + ⚽${gls} goals = ${pts} pts</div>
+        </div>
+        <div class="teams-remaining">${active}/6 in</div>
+        <div class="points-badge">${pts}</div>
+      </div>`;
+  });
+  html += '<div class="status-bar"><span class="status-dot ' + statusType + '"></span>' + statusMsg + '</div>';
+  html += '</div>';
+
+  // Points key
+  html += '<div class="card"><div class="card-header"><span class="card-title">Points key</span></div><div class="points-key">';
+  Object.entries(POINT_SYSTEM).forEach(([stage, pts]) => {
+    html += `<span class="key-pill">${stage}: +${pts}</span>`;
+  });
+  html += `<span class="key-pill" style="background:#e0f2fe;color:#0369a1;">Each goal: +${GOAL_BONUS} pt</span>`;
+  html += '</div></div>';
+
+  document.getElementById("tab-standings").innerHTML = html;
+}
+
+function renderTeams() {
+  const sorted = [...PARTICIPANTS].sort((a,b) => totalPts(b) - totalPts(a));
+  let html = '<div class="card">';
+  html += '<div class="card-header"><span class="card-title">Teams by participant</span></div>';
+  sorted.forEach(p => {
+    const pts = totalPts(p);
+    html += `<div class="participant-block">
+      <div class="participant-block-header">
+        <span class="participant-block-name">${p.name}</span>
+        <span class="points-badge" style="font-size:0.8rem;padding:0.2rem 0.5rem;">${pts} pts</span>
+      </div>
+      <div class="teams-grid">`;
+    p.teams.forEach(t => {
+      const s = teamState[t] || {};
+      const tPts = pointsForTeam(t);
+      const goals = s.goals || 0;
+      const cls = s.eliminated ? "eliminated" : (s.stage && s.stage !== "Group stage" ? "active" : "");
+      const ptsLabel = tPts > 0 ? `<span class="chip-pts">${tPts}p${goals > 0 ? ` ⚽${goals}` : ""}</span>` : (goals > 0 ? `<span class="chip-pts">⚽${goals}</span>` : "");
+      html += `<span class="team-chip ${cls}">${t}${ptsLabel}</span>`;
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  document.getElementById("tab-teams").innerHTML = html;
+}
+
+function renderEdit() {
+  let html = `<div class="alert alert-info">
+    Update each team's furthest stage and total goals scored. Points stack automatically.
+    Hit "Sync live data" to auto-fill from current World Cup results.
+  </div>`;
+  html += '<div class="card"><div class="card-header"><span class="card-title">Team stages &amp; goals</span></div>';
+  html += '<div class="edit-grid">';
+  PARTICIPANTS.forEach(p => {
+    p.teams.forEach(t => {
+      const s = teamState[t] || {};
+      const goals = s.goals || 0;
+      const opts = ["Group stage", ...STAGE_ORDER].map(stage =>
+        `<option value="${stage}" ${s.stage === stage ? "selected" : ""}>${stage}</option>`
+      ).join("");
+      html += `<div class="edit-cell">
+        <div class="edit-cell-left">
+          <div class="edit-team">${t}</div>
+          <div class="edit-owner">${p.name}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+          <select class="stage-select" onchange="updateStage('${t}', this.value)">${opts}</select>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span style="font-size:0.7rem;color:var(--gray-400);">⚽ goals</span>
+            <input type="number" min="0" value="${goals}" style="width:52px;font-size:0.75rem;padding:2px 5px;border:1px solid var(--gray-200);border-radius:5px;text-align:right;"
+              onchange="updateGoals('${t}', this.value)" />
+          </div>
+        </div>
+      </div>`;
+    });
+  });
+  html += '</div></div>';
+  document.getElementById("tab-edit").innerHTML = html;
+}
+
+function updateStage(team, stage) {
+  if (!teamState[team]) teamState[team] = { goals: 0 };
+  teamState[team].stage = stage;
+  teamState[team].eliminated = (stage === "Group stage");
+  save();
+  renderAll();
+}
+
+function updateGoals(team, val) {
+  if (!teamState[team]) teamState[team] = { stage: "Group stage", eliminated: false };
+  teamState[team].goals = Math.max(0, parseInt(val) || 0);
+  save();
+  renderAll();
+}
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+function setTab(tab) {
+  ["standings","teams","edit"].forEach(t => {
+    document.getElementById("tab-"+t).style.display = t === tab ? "" : "none";
+  });
+  document.querySelectorAll(".tab").forEach((el,i) => {
+    el.classList.toggle("active", ["standings","teams","edit"][i] === tab);
+  });
+}
+
+// ─── LIVE SYNC VIA CLAUDE AI ─────────────────────────────────────────────────
+async function syncData() {
+  const btn = document.getElementById("sync-btn");
+  btn.disabled = true;
+  btn.textContent = "⟳ Syncing…";
+  statusType = "loading";
+  statusMsg = "Fetching live World Cup data…";
+  renderStandings();
+
+  const allTeams = PARTICIPANTS.flatMap(p => p.teams);
+
+  const prompt = `You are a World Cup 2026 data assistant. Today is ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}.
+
+Using your knowledge of the 2026 FIFA World Cup results so far, use web search to get the most current data, then return for each team:
+1. The furthest stage reached
+2. Total goals scored across ALL matches played so far (including group stage + knockout rounds)
+
+Teams to check: ${allTeams.join(", ")}
+
+Stage labels (use exactly):
+- "Group stage" = eliminated in group stage or not yet reached knockout round
+- "Round of 32" = advanced to/through Round of 32
+- "Round of 16" = advanced to/through Round of 16
+- "Quarterfinals" = advanced to/through Quarterfinals
+- "Semifinals" = advanced to/through Semifinals
+- "Final" = reached the Final
+- "Champion" = won the tournament
+
+Respond ONLY with a JSON object. No markdown, no explanation. Format:
+{"Brazil":{"stage":"Round of 32","goals":7},"France":{"stage":"Group stage","goals":3},...}
+
+Goals = total goals scored by that national team in all their World Cup 2026 matches so far. Use 0 if no matches played yet.`;
+
+  try {
+    const res = await fetch("/.netlify/functions/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      const detail = data.details ? JSON.stringify(data.details) : data.error;
+      throw new Error(detail);
+    }
+
+    if (!data.content) {
+      throw new Error("Unexpected response format: " + JSON.stringify(data));
+    }
+
+    const text = data.content.map(b => b.type === "text" ? b.text : "").join("").trim();
+    const jsonStr = text.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(jsonStr);
+
+    let updated = 0;
+    for (const [team, data] of Object.entries(parsed)) {
+      if (teamState[team] !== undefined) {
+        const stage = typeof data === "object" ? data.stage : data;
+        const goals = typeof data === "object" ? (data.goals || 0) : 0;
+        teamState[team] = { stage, goals, eliminated: stage === "Group stage" };
+        updated++;
+      }
+    }
+
+    save();
+    statusType = "ok";
+    const now = new Date().toLocaleTimeString("en-US", {hour:"2-digit",minute:"2-digit"});
+    statusMsg = `Synced ${updated} teams at ${now}`;
+    document.getElementById("last-updated").textContent = `Last synced: ${now}`;
+    document.getElementById("alert-area").innerHTML = "";
+
+  } catch(e) {
+    statusType = "error";
+    statusMsg = "Sync failed — see error below";
+    document.getElementById("alert-area").innerHTML = `<div class="alert alert-error">⚠️ Sync failed: ${e.message}. You can still edit stages manually.</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = "⟳ Sync live data";
+  renderAll();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderAll();
+</script>
+</body>
+</html>
