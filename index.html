@@ -556,89 +556,75 @@ function setTab(tab) {
   });
 }
 
-// ─── LIVE SYNC VIA CLAUDE AI ─────────────────────────────────────────────────
-async function callSync(teams) {
-  const today = new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
-  const prompt = `World Cup 2026 data assistant. Today: ${today}.
-Search for current 2026 FIFA World Cup results and return data for these teams: ${teams.join(", ")}
-
-For each team return:
-1. Furthest stage reached (use EXACTLY one of: "Group stage", "Round of 32", "Round of 16", "Quarterfinals", "Semifinals", "Final", "Champion")
-2. Total goals scored across all their matches so far
-
-Respond ONLY with a JSON object, no markdown:
-{"TeamName":{"stage":"Group stage","goals":0},...}`;
-
-  const res = await fetch("/.netlify/functions/sync", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 800,
-      tools: [{ type: "web_search_20250305", name: "web_search" }],
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
-
-  const rawText = await res.text();
-  if (!res.ok) throw new Error("HTTP " + res.status + ": " + rawText.substring(0, 200));
-
-  let data;
-  try { data = JSON.parse(rawText); }
-  catch(e) { throw new Error("Bad response: " + rawText.substring(0, 200)); }
-
-  if (data.error) throw new Error(data.details ? JSON.stringify(data.details) : data.error);
-  if (!data.content) throw new Error("No content in response: " + JSON.stringify(data));
-
-  const text = data.content.map(b => b.type === "text" ? b.text : "").join("").trim();
-  const jsonStr = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(jsonStr);
-}
-
+// ─── LIVE SYNC VIA WORLD CUP API ─────────────────────────────────────────────
 async function syncData() {
   const btn = document.getElementById("sync-btn");
   btn.disabled = true;
   btn.textContent = "⟳ Syncing…";
   statusType = "loading";
-  statusMsg = "Fetching live World Cup data… (this takes ~20 seconds)";
+  statusMsg = "Fetching live World Cup data…";
   renderStandings();
 
-  const allTeams = PARTICIPANTS.flatMap(p => p.teams);
-  const half = Math.ceil(allTeams.length / 2);
-  const batch1 = allTeams.slice(0, half);
-  const batch2 = allTeams.slice(half);
-
   try {
-    statusMsg = "Syncing batch 1 of 2…";
-    renderStandings();
-    const result1 = await callSync(batch1);
+    const res = await fetch("/.netlify/functions/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
 
-    statusMsg = "Syncing batch 2 of 2…";
-    renderStandings();
-    const result2 = await callSync(batch2);
+    const rawText = await res.text();
+    if (!res.ok) throw new Error("HTTP " + res.status + ": " + rawText.substring(0, 300));
 
-    const parsed = { ...result1, ...result2 };
+    let data;
+    try { data = JSON.parse(rawText); }
+    catch(e) { throw new Error("Bad response: " + rawText.substring(0, 300)); }
+
+    if (data.error) throw new Error(data.error);
+
+    const apiTeams = data.teams || {};
+
+    function normalize(name) {
+      return (name || "").toLowerCase()
+        .replace(/turkiye|türkiye/g, "turkey")
+        .replace(/cote d.ivoire|côte d.ivoire/g, "ivory coast")
+        .replace(/congo dr|dr congo|congo, dr/g, "congo")
+        .replace(/bosnia and herzegovina|bosnia & herzegovina|bosnia-herzegovina/g, "bosnia/herz")
+        .replace(/cabo verde/g, "cape verde")
+        .replace(/korea republic|republic of korea/g, "south korea")
+        .trim();
+    }
+
+    const normalizedApi = {};
+    for (const [name, info] of Object.entries(apiTeams)) {
+      normalizedApi[normalize(name)] = info;
+    }
+
     let updated = 0;
-    for (const [team, info] of Object.entries(parsed)) {
-      if (teamState[team] !== undefined) {
-        const stage = typeof info === "object" ? info.stage : info;
-        const goals = typeof info === "object" ? (info.goals || 0) : 0;
-        teamState[team] = { stage, goals, eliminated: stage === "Group stage" };
-        updated++;
+    for (const p of PARTICIPANTS) {
+      for (const team of p.teams) {
+        const info = normalizedApi[normalize(team)];
+        if (info) {
+          teamState[team] = {
+            stage: info.stage || "Group stage",
+            goals: info.goals || 0,
+            eliminated: (info.stage || "Group stage") === "Group stage"
+          };
+          updated++;
+        }
       }
     }
 
     save();
     statusType = "ok";
     const now = new Date().toLocaleTimeString("en-US", {hour:"2-digit",minute:"2-digit"});
-    statusMsg = `Synced ${updated} teams at ${now}`;
-    document.getElementById("last-updated").textContent = `Last synced: ${now}`;
+    statusMsg = "Synced " + updated + " teams from " + data.matchCount + " matches at " + now;
+    document.getElementById("last-updated").textContent = "Last synced: " + now;
     document.getElementById("alert-area").innerHTML = "";
 
   } catch(e) {
     statusType = "error";
     statusMsg = "Sync failed — see error below";
-    document.getElementById("alert-area").innerHTML = `<div class="alert alert-error">⚠️ Sync failed: ${e.message}. You can still edit stages manually.</div>`;
+    document.getElementById("alert-area").innerHTML = "<div class=\"alert alert-error\">⚠️ Sync failed: " + e.message + ". You can still edit stages manually.</div>";
   }
 
   btn.disabled = false;
