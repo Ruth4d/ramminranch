@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ram Ranch World Cup 2026 Pool</title>
+<title>World Cup 2026 Pool</title>
 <style>
   :root {
     --green: #2d6a4f;
@@ -334,7 +334,7 @@
 
 <div class="hero">
   <div class="sub">2026 FIFA World Cup</div>
-  <h1>Rammin Ranch Draft Pool Standings</h1>
+  <h1>Draft Pool Standings</h1>
   <p class="last-updated" id="last-updated">Not yet synced</p>
   <button class="sync-btn" id="sync-btn" onclick="syncData()">⟳ Sync live data</button>
 </div>
@@ -589,8 +589,9 @@ async function syncData() {
 
     function normalize(name) {
       return (name || "").toLowerCase()
-        .replace(/turkiye|türkiye/g, "turkey")
-        .replace(/cote d.ivoire|côte d.ivoire/g, "ivory coast")
+        .replace(/^united states$/, "usa")
+        .replace(/turkiye|türkiye/g, "turkiye")
+        .replace(/côte d.ivoire|cote d.ivoire/g, "ivory coast")
         .replace(/congo dr|dr congo|congo, dr/g, "congo")
         .replace(/bosnia and herzegovina|bosnia & herzegovina|bosnia-herzegovina/g, "bosnia/herz")
         .replace(/cabo verde/g, "cape verde")
