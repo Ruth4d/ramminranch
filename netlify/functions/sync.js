@@ -28,7 +28,7 @@ exports.handler = async function(event) {
     const stageOrder = ["Group stage","Round of 32","Round of 16","Quarterfinals","Semifinals","Final","Champion"];
 
     const stageMap = {
-      "group":          "Round of 32",
+      "group":          "Group stage",
       "round_of_32":    "Round of 32",
       "roundof32":      "Round of 32",
       "round of 32":    "Round of 32",
