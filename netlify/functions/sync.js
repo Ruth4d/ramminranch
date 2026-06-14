@@ -55,6 +55,7 @@ exports.handler = async function(event) {
         .replace(/bosnia and herzegovina|bosnia & herzegovina|bosnia-herzegovina/, "bosnia/herz")
         .replace(/cabo verde/, "cape verde")
         .replace(/korea republic|republic of korea/, "south korea")
+        .replace(/^czech republic$/, "czechia")
         .trim();
     }
 
