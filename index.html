@@ -334,7 +334,7 @@
 
 <div class="hero">
   <div class="sub">2026 FIFA World Cup</div>
-  <h1>Draft Pool Standings</h1>
+  <h1 id="secret-trigger" onclick="handleSecretClick()" style="cursor:default;">Draft Pool Standings</h1>
   <p class="last-updated" id="last-updated">Not yet synced</p>
   <button class="sync-btn" id="sync-btn" onclick="syncData()">⟳ Sync live data</button>
 </div>
@@ -345,7 +345,7 @@
   <div class="tabs">
     <button class="tab active" onclick="setTab('standings')">🏆 Standings</button>
     <button class="tab" onclick="setTab('teams')">📋 Teams</button>
-    <button class="tab" onclick="setTab('edit')">✏️ Edit stages</button>
+    <button class="tab" id="edit-tab-btn" onclick="setTab('edit')" style="display:none">✏️ Edit stages</button>
   </div>
 
   <div id="tab-standings"></div>
@@ -590,12 +590,13 @@ async function syncData() {
     function normalize(name) {
       return (name || "").toLowerCase()
         .replace(/^united states$/, "usa")
-        .replace(/turkiye|türkiye/g, "turkiye")
-        .replace(/côte d.ivoire|cote d.ivoire/g, "ivory coast")
-        .replace(/congo dr|dr congo|congo, dr/g, "congo")
-        .replace(/bosnia and herzegovina|bosnia & herzegovina|bosnia-herzegovina/g, "bosnia/herz")
-        .replace(/cabo verde/g, "cape verde")
+        .replace(/^czech republic$/, "czechia")
+        .replace(/côte d.ivoire|cote d.ivoire|ivory coast/g, "ivory coast")
+        .replace(/bosnia and herzegovina|bosnia & herzegovina|bosnia-herzegovina|bosnia-herz/g, "bosnia/herz")
+        .replace(/congo dr|dr congo|congo, dr|democratic republic of congo/g, "congo")
         .replace(/korea republic|republic of korea/g, "south korea")
+        .replace(/cabo verde/g, "cape verde")
+        .replace(/turkiye|türkiye/g, "turkiye")
         .trim();
     }
 
@@ -635,6 +636,22 @@ async function syncData() {
   btn.disabled = false;
   btn.textContent = "⟳ Sync live data";
   renderAll();
+}
+
+// ─── SECRET EDIT UNLOCK ──────────────────────────────────────────────────────
+let secretClicks = 0;
+let secretTimer = null;
+function handleSecretClick() {
+  secretClicks++;
+  clearTimeout(secretTimer);
+  secretTimer = setTimeout(() => { secretClicks = 0; }, 2000);
+  if (secretClicks >= 5) {
+    secretClicks = 0;
+    const btn = document.getElementById("edit-tab-btn");
+    const isVisible = btn.style.display !== "none";
+    btn.style.display = isVisible ? "none" : "";
+    if (isVisible && currentTab === "edit") setTab("standings");
+  }
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
