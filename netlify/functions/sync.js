@@ -28,27 +28,27 @@ exports.handler = async function(event) {
     const stageOrder = ["Group stage","Round of 32","Round of 16","Quarterfinals","Semifinals","Final","Champion"];
 
     const stageMap = {
-      "group":          "Group stage",
-      "r32":            "Round of 32",
-      "round_of_32":    "Round of 32",
-      "roundof32":      "Round of 32",
-      "round of 32":    "Round of 32",
-      "r16":            "Round of 16",
-      "round_of_16":    "Round of 16",
-      "roundof16":      "Round of 16",
-      "round of 16":    "Round of 16",
-      "qf":             "Quarterfinals",
-      "quarterfinal":   "Quarterfinals",
-      "quarter_final":  "Quarterfinals",
-      "quarterfinals":  "Quarterfinals",
-      "sf":             "Semifinals",
-      "semifinal":      "Semifinals",
-      "semi_final":     "Semifinals",
-      "semifinals":     "Semifinals",
-      "third_place":    "Semifinals",
-      "final":          "Final",
-      "f":              "Final"
+      "group":         "Group stage",
+      "r32":           "Round of 32",
+      "round_of_32":   "Round of 32",
+      "roundof32":     "Round of 32",
+      "round of 32":   "Round of 32",
+      "r16":           "Round of 16",
+      "round_of_16":   "Round of 16",
+      "roundof16":     "Round of 16",
+      "round of 16":   "Round of 16",
+      "qf":            "Quarterfinals",
+      "quarterfinal":  "Quarterfinals",
+      "quarterfinals": "Quarterfinals",
+      "sf":            "Semifinals",
+      "semifinal":     "Semifinals",
+      "semifinals":    "Semifinals",
+      "third_place":   "Semifinals",
+      "final":         "Final",
+      "f":             "Final"
     };
+
+    const knockoutStages = ["Round of 32","Round of 16","Quarterfinals","Semifinals","Final"];
 
     function normalize(name) {
       return (name || "").toLowerCase()
@@ -68,21 +68,50 @@ exports.handler = async function(event) {
     for (const game of games) {
       if ((game.finished || "").toString().toUpperCase() !== "TRUE") continue;
 
-      const homeTeam = game.home_team_name_en;
-      const awayTeam = game.away_team_name_en;
+      const homeTeam = normalize(game.home_team_name_en);
+      const awayTeam = normalize(game.away_team_name_en);
       const homeGoals = parseInt(game.home_score) || 0;
       const awayGoals = parseInt(game.away_score) || 0;
       const roundRaw = (game.type || game.stage || game.round || "group").toLowerCase().trim();
       const stage = stageMap[roundRaw] || "Group stage";
+      const isKnockout = knockoutStages.includes(stage);
 
-      for (const [team, goals] of [[homeTeam, homeGoals], [awayTeam, awayGoals]]) {
+      for (const [team, goals, otherGoals] of [
+        [homeTeam, homeGoals, awayGoals],
+        [awayTeam, awayGoals, homeGoals]
+      ]) {
         if (!team) continue;
-        const key = normalize(team);
-        if (!teamData[key]) teamData[key] = { goals: 0, stage: "Group stage" };
-        teamData[key].goals += goals;
-        const current = stageOrder.indexOf(teamData[key].stage);
+        if (!teamData[team]) teamData[team] = { goals: 0, stage: "Group stage", eliminated: false };
+
+        teamData[team].goals += goals;
+
+        // Update furthest stage reached
+        const current = stageOrder.indexOf(teamData[team].stage);
         const next = stageOrder.indexOf(stage);
-        if (next > current) teamData[key].stage = stage;
+        if (next > current) teamData[team].stage = stage;
+
+        // Mark eliminated if they lost a knockout match
+        // (loser = fewer goals; draws go to extra time/pens but API still marks a winner)
+        if (isKnockout && goals < otherGoals) {
+          teamData[team].eliminated = true;
+        }
+      }
+    }
+
+    // Champion: team that won the final is not eliminated
+    const finalGame = games.find(g =>
+      (g.type || "").toLowerCase() === "final" &&
+      (g.finished || "").toString().toUpperCase() === "TRUE"
+    );
+    if (finalGame) {
+      const homeGoals = parseInt(finalGame.home_score) || 0;
+      const awayGoals = parseInt(finalGame.away_score) || 0;
+      const winner = homeGoals > awayGoals
+        ? normalize(finalGame.home_team_name_en)
+        : normalize(finalGame.away_team_name_en);
+      if (teamData[winner]) {
+        teamData[winner].stage = "Champion";
+        teamData[winner].eliminated = false;
       }
     }
 
