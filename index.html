@@ -383,7 +383,7 @@ const GOAL_BONUS = 1; // points per goal scored
 function defaultTeamState() {
   const state = {};
   PARTICIPANTS.forEach(p => {
-    p.teams.forEach(t => { state[t] = { stage: "Group stage", eliminated: false, goals: 0 }; });
+    p.teams.forEach(t => { state[t] = { stage: "Group stage", eliminated: info.eliminated || false, goals: 0 }; });
   });
   return state;
 }
