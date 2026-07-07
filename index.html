@@ -614,7 +614,7 @@ async function syncData() {
           teamState[team] = {
             stage: info.stage || "Group stage",
             goals: info.goals || 0,
-            eliminated: false
+            eliminated: info.eliminated || false
           };
           updated++;
         }
