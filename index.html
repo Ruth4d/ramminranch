@@ -593,10 +593,11 @@ async function syncData() {
         .replace(/^czech republic$/, "czechia")
         .replace(/côte d.ivoire|cote d.ivoire|ivory coast/g, "ivory coast")
         .replace(/bosnia and herzegovina|bosnia & herzegovina|bosnia-herzegovina|bosnia-herz/g, "bosnia/herz")
-        .replace(/congo dr|dr congo|congo, dr|democratic republic of congo/g, "congo")
+        .replace(/congo dr|dr congo|congo, dr|democratic republic of congo|democratic republic of the congo/g, "congo")
         .replace(/korea republic|republic of korea/g, "south korea")
         .replace(/cabo verde/g, "cape verde")
         .replace(/turkiye|türkiye/g, "turkiye")
+        .replace(/^turkey$/, "turkiye")
         .trim();
     }
 
