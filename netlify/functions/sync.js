@@ -54,12 +54,13 @@ exports.handler = async function(event) {
       return (name || "").toLowerCase()
         .replace(/^united states$/, "usa")
         .replace(/^czech republic$/, "czechia")
+        .replace(/^turkey$/, "turkiye")
+        .replace(/türkiye/g, "turkiye")
         .replace(/côte d.ivoire|cote d.ivoire|ivory coast/g, "ivory coast")
         .replace(/bosnia and herzegovina|bosnia & herzegovina|bosnia-herzegovina/g, "bosnia/herz")
-        .replace(/congo dr|dr congo|congo, dr|democratic republic of congo/g, "congo")
+        .replace(/democratic republic of the congo|democratic republic of congo|congo dr|dr congo|congo, dr/g, "congo")
         .replace(/korea republic|republic of korea/g, "south korea")
         .replace(/cabo verde/g, "cape verde")
-        .replace(/turkiye|türkiye/g, "turkiye")
         .trim();
     }
 
@@ -85,20 +86,17 @@ exports.handler = async function(event) {
 
         teamData[team].goals += goals;
 
-        // Update furthest stage reached
         const current = stageOrder.indexOf(teamData[team].stage);
         const next = stageOrder.indexOf(stage);
         if (next > current) teamData[team].stage = stage;
 
-        // Mark eliminated if they lost a knockout match
-        // (loser = fewer goals; draws go to extra time/pens but API still marks a winner)
         if (isKnockout && goals < otherGoals) {
           teamData[team].eliminated = true;
         }
       }
     }
 
-    // Champion: team that won the final is not eliminated
+    // Mark champion
     const finalGame = games.find(g =>
       (g.type || "").toLowerCase() === "final" &&
       (g.finished || "").toString().toUpperCase() === "TRUE"
